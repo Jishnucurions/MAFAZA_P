@@ -1,0 +1,33 @@
+<form method="POST" action="{% url 'assign_project' user_id=user_id %}">
+    {% csrf_token %}
+    <input type="hidden" name="user_id" value="{{ user_id }}">
+    
+    <div class="mb-3">
+      <label for="projectSelect" class="form-label">Select Project</label>
+      <select class="form-select" id="projectSelect" name="project_id" required>
+        {% for project in projects %}
+        <option value="{{ project.id }}">{{ project.project_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <div class="mb-3">
+      <label for="returnPeriod" class="form-label">Return Period</label>
+      <select class="form-select" id="returnPeriod" name="return_period" required>
+        <option value="2m">2 Minutes</option>
+        <option value="10m">10 Minutes</option>
+        <option value="monthly">Monthly</option>
+        <option value="quarterly">Quarterly</option>
+        <option value="semiannual">Semiannual</option>
+        <option value="annual">Annual</option>
+      </select>
+    </div>
+  
+    <div class="mb-3">
+      <label for="rateOfInterest" class="form-label">Rate of Interest (%)</label>
+      <input type="number" class="form-control" id="rateOfInterest" name="rate_of_interest" required step="0.01">
+    </div>
+  
+    <button type="submit" class="btn btn-primary">Assi</button>
+  </form>
+  
