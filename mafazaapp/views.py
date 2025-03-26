@@ -271,23 +271,35 @@ def staff_dashboard(request):
 
 
 
+# @staff_member_required
+# def update_transaction_status(request, transaction_id):
+#     transaction = get_object_or_404(Transaction, id=transaction_id)
+
+#     if request.method == "POST":
+#         action = request.POST.get("action")
+#         if action == "approve":
+#             transaction.status = "approved"
+#             transaction.save()
+#             messages.success(request, f"Transaction {transaction.id} approved.")
+#         elif action == "reject":
+#             transaction.status = "rejected"
+#             transaction.save()
+#             messages.success(request, f"Transaction {transaction.id} rejected.")
+#         else:
+#             messages.error(request, "Invalid action.")
+
+#     return redirect("staff_dashboard")
 @staff_member_required
-def update_transaction_status(request, transaction_id):
+def update_transaction_status(request, transaction_id, status):
     transaction = get_object_or_404(Transaction, id=transaction_id)
-
-    if request.method == "POST":
-        action = request.POST.get("action")
-        if action == "approve":
-            transaction.status = "approved"
-            transaction.save()
-            messages.success(request, f"Transaction {transaction.id} approved.")
-        elif action == "reject":
-            transaction.status = "rejected"
-            transaction.save()
-            messages.success(request, f"Transaction {transaction.id} rejected.")
-        else:
-            messages.error(request, "Invalid action.")
-
+    
+    if status in ['approved', 'rejected']:
+        transaction.status = status
+        transaction.save()
+        messages.success(request, f"Transaction {transaction.id} {status}.")
+    else:
+        messages.error(request, "Invalid status.")
+    
     return redirect("staff_dashboard")
 
 
@@ -361,9 +373,39 @@ def Myproject(request):
 from .models import UserLedger
 
 
+# def admin_ledger(request):
+#     ledger_entries = UserLedger.objects.select_related('transaction__user').all().order_by('date')
+#     return render(request, "admin_ledger.html", {"ledger_entries": ledger_entries})
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import UserDocument, UserLedger, CustomUser
+
+@login_required
 def admin_ledger(request):
     ledger_entries = UserLedger.objects.select_related('transaction__user').all().order_by('date')
-    return render(request, "admin_ledger.html", {"ledger_entries": ledger_entries})
+    user_type = request.GET.get('user_type', '')
+    
+    if user_type:
+        ledger_entries = ledger_entries.filter(transaction__user__groups__name=user_type)
+    
+    return render(request, "admin_ledger.html", {
+        "ledger_entries": ledger_entries,
+        "user_type": user_type
+    })
+
+@login_required
+def admin_view_user_documents(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    documents = UserDocument.objects.filter(user=user).order_by('-uploaded_at')
+    
+    return render(request, 'Admin/admin_document_list.html', {
+        'user': user,
+        'documents': documents
+    })
 
 
 
@@ -374,18 +416,76 @@ def admin_ledger(request):
 
 
 
+# def create_transaction_view(request):
+#     projects = AssignedProject.objects.filter(user=request.user)
+    
+#     # Initialize current_balance for GET requests
+#     current_balance = Decimal('0.00')
 
+#     # Retrieve user's transactions
+#     transactions = Transaction.objects.filter(user=request.user).order_by('-transaction_date')
 
+#     if request.method == 'POST':
+#         form = TransactionForm(request.POST, request.FILES, user=request.user)
+        
+#         if form.is_valid():
+#             try:
+#                 project = form.cleaned_data['project']
+                
+#                 # Get project-specific balance
+#                 last_ledger = UserLedger.objects.filter(
+#                     transaction__user=request.user,
+#                     project_name=project.project_name
+#                 ).order_by('-date').first()
+                
+#                 current_balance = last_ledger.balance if last_ledger else Decimal('0.00')
+                
+#                 # Process transaction
+#                 user = request.user
+#                 amount = form.cleaned_data['amount']
+#                 transaction_type = form.cleaned_data['transaction_type']
+#                 receipt = form.cleaned_data.get('receipt')
+#                 narration = form.cleaned_data['narration']
 
+#                 transaction = create_transaction(
+#                     user=user,
+#                     project=project,
+#                     amount=amount,
+#                     transaction_type=transaction_type,
+#                     receipt=receipt,
+#                     narration=narration
+#                 )
+                
+#                 messages.success(request, 'Transaction created successfully!')
+#                 return redirect('ledger_view')
+                
+#             except Exception as e:
+#                 messages.error(request, f'Error: {str(e)}')
+#     else:
+#         form = TransactionForm(user=request.user)
+#         # For GET requests, show the total balance across all projects
+#         last_ledger = UserLedger.objects.filter(
+#             transaction__user=request.user
+#         ).order_by('-date').first()
+#         current_balance = last_ledger.balance if last_ledger else Decimal('0.00')
 
+#     return render(request, 'transactions.html', {
+#         'form': form,
+#         'projects': projects,
+#         'current_balance': current_balance,
+#         'transactions': transactions  # Pass transactions to the template
+#     })
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import TransactionForm
+from .models import AssignedProject, Transaction, UserLedger
+from .utils import create_transaction
+from decimal import Decimal
 
 def create_transaction_view(request):
     projects = AssignedProject.objects.filter(user=request.user)
-    
-    # Initialize current_balance for GET requests
     current_balance = Decimal('0.00')
-
-    # Retrieve user's transactions
     transactions = Transaction.objects.filter(user=request.user).order_by('-transaction_date')
 
     if request.method == 'POST':
@@ -394,8 +494,6 @@ def create_transaction_view(request):
         if form.is_valid():
             try:
                 project = form.cleaned_data['project']
-                
-                # Get project-specific balance
                 last_ledger = UserLedger.objects.filter(
                     transaction__user=request.user,
                     project_name=project.project_name
@@ -403,20 +501,13 @@ def create_transaction_view(request):
                 
                 current_balance = last_ledger.balance if last_ledger else Decimal('0.00')
                 
-                # Process transaction
-                user = request.user
-                amount = form.cleaned_data['amount']
-                transaction_type = form.cleaned_data['transaction_type']
-                receipt = form.cleaned_data.get('receipt')
-                narration = form.cleaned_data['narration']
-
                 transaction = create_transaction(
-                    user=user,
+                    user=request.user,
                     project=project,
-                    amount=amount,
-                    transaction_type=transaction_type,
-                    receipt=receipt,
-                    narration=narration
+                    amount=form.cleaned_data['amount'],
+                    transaction_type=form.cleaned_data['transaction_type'],
+                    receipt=form.cleaned_data.get('receipt'),
+                    narration=form.cleaned_data['narration']
                 )
                 
                 messages.success(request, 'Transaction created successfully!')
@@ -426,7 +517,6 @@ def create_transaction_view(request):
                 messages.error(request, f'Error: {str(e)}')
     else:
         form = TransactionForm(user=request.user)
-        # For GET requests, show the total balance across all projects
         last_ledger = UserLedger.objects.filter(
             transaction__user=request.user
         ).order_by('-date').first()
@@ -436,10 +526,8 @@ def create_transaction_view(request):
         'form': form,
         'projects': projects,
         'current_balance': current_balance,
-        'transactions': transactions  # Pass transactions to the template
+        'transactions': transactions
     })
-
-
 
 from .utils import generate_missed_returns
 
@@ -453,7 +541,8 @@ def ledger_view(request):
 
   
     ledger_entries = UserLedger.objects.filter(
-        transaction__user=request.user
+        transaction__user=request.user,
+        transaction__status='approved'
     ).order_by('-date')
 
 
@@ -804,3 +893,31 @@ def staff_create_transaction(request):
         form = StaffTransactionForm()
     
     return render(request, 'admin_transactions.html', {'form': form})
+
+
+
+
+# documents/views.py
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .models import UserDocument
+from .forms import DocumentUploadForm
+
+@login_required
+def upload_document(request):
+    if request.method == 'POST':
+        form = DocumentUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            document = form.save(commit=False)
+            document.user = request.user
+            document.save()
+            return redirect('view_documents')
+    else:
+        form = DocumentUploadForm()
+    
+    return render(request, 'User/upload.html', {'form': form})
+
+@login_required
+def view_documents(request):
+    documents = UserDocument.objects.filter(user=request.user).order_by('-uploaded_at')
+    return render(request, 'User/list.html', {'documents': documents})

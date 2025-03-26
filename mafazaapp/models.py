@@ -194,3 +194,74 @@ class PasswordResetRequest(models.Model):
     
     class Meta:
         ordering = ['-requested_at']
+        
+        
+class UserDocument(models.Model):
+    DOCUMENT_TYPES = (
+        ('PASSPORT', 'Passport'),
+        ('EMIRATES_ID', 'Emirates ID'),
+        ('CONTRACT', 'Agreement/Contract'),
+        ('PROOF_OF_ADDRESS', 'Proof of Address'),
+        ('BANK_STATEMENT', 'Bank Statement'),
+        ('SELFIE', 'Selfie with ID'),
+        ('OTHER', 'Other'),
+    )
+    
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Review'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected - Needs Resubmission'),
+    )
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='documents')
+    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPES)
+    file = models.FileField(upload_to='user_documents/')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='reviewed_documents'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, null=True)
+    expiration_date = models.DateField(blank=True, null=True)  # Useful for IDs/passports
+    is_primary = models.BooleanField(default=False)  # For marking primary ID document
+
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'User Document'
+        verbose_name_plural = 'User Documents'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_document_type_display()} ({self.status})"
+
+    def clean(self):
+        # Validate that a user can only have one primary document of each type
+        if self.is_primary:
+            existing_primary = UserDocument.objects.filter(
+                user=self.user,
+                document_type=self.document_type,
+                is_primary=True
+            ).exclude(pk=self.pk).exists()
+            
+            if existing_primary:
+                raise ValidationError(
+                    f'User already has a primary {self.get_document_type_display()}'
+                )
+
+    def save(self, *args, **kwargs):
+        # Automatically set passport or emirates ID as primary if no primary exists
+        if not self.is_primary and self.document_type in ['PASSPORT', 'EMIRATES_ID']:
+            has_primary = UserDocument.objects.filter(
+                user=self.user,
+                document_type=self.document_type,
+                is_primary=True
+            ).exists()
+            
+            if not has_primary:
+                self.is_primary = True
+                
+        super().save(*args, **kwargs)     

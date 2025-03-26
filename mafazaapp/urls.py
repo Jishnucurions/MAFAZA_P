@@ -18,7 +18,7 @@ from django.urls import path
 
 from django.contrib.auth.views import LogoutView
 
-from mafazaapp.views import Adminuser, Home, Myproject, admin_dashboard, admin_ledger,  assign_project, change_password, create_transaction_view,  custom_login, edit_profile, forgot_password,  investment_projects, ledger_view, pending_approval, project_list, signup, staff_create_transaction,staff_dashboard, toggle_project_status, update_transaction_status
+from mafazaapp.views import Adminuser, Home, Myproject, admin_dashboard, admin_ledger, admin_view_user_documents,  assign_project, change_password, create_transaction_view,  custom_login, edit_profile, forgot_password,  investment_projects, ledger_view, pending_approval, project_list, signup, staff_create_transaction,staff_dashboard, toggle_project_status, update_transaction_status, upload_document, view_documents
 # from .views import create_transaction,transaction_list,update_transaction_status,pending_approval,AdminLedger,Myproject,create_staff_transaction,toggle_project_status,edit_profile
 # from .views import update_return_amount
 
@@ -46,6 +46,10 @@ urlpatterns = [
      path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
     path("admin_user/", Adminuser, name="admin_user"),
       path("admin_ledger/", admin_ledger, name="admin_ledger"),
+       path('documents/', view_documents, name='view_documents'),
+    path('documents/upload/', upload_document, name='upload_document'),
+
+    path('user/<uuid:user_id>/documents/', admin_view_user_documents, name='admin_user_documents'),
         # path('generate-pdf/', generate_ledger_pdf, name='generate_ledger_pdf'),
        
     # path('assign-project/', assign_project, name='assign_project'),

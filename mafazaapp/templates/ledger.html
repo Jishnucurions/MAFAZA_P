@@ -14,6 +14,9 @@
     Soft UI Dashboard 3 by Creative Tim
   </title>
   <link rel="apple-touch-icon" sizes="76x76" href="../assets/img/apple-icon.png">
+  <!-- html2pdf CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <link rel="icon" type="image/png" href="../assets/img/favicon.png">
   <script src="{% static 'js/soft-ui-dashboard' %}" crossorigin="anonymous"></script>
   <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
@@ -253,6 +256,11 @@
               <i class="fas fa-key"></i> Change Password
           </a>
       </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'view_documents' %}">
+            <i class="fas fa-file-upload"></i> My Documents
+        </a>
+    </li>
         
       </ul>
     </div>
@@ -495,16 +503,16 @@
                     
                     <input type="text" class="form-control bg-gray" placeholder="Type here...">
                   </div>
-                  <button type="button" class="badge badge-sm bg-gradient-primary border-0 me-3">
-                    {% comment %} <a href="{% url 'generate_ledger_pdf' %}" style="color: white; text-decoration: none;">PDF</a> {% endcomment %}
-                </button>
-                  {% comment %} <button type="button" class="badge badge-sm bg-gradient-primary border-0">Csv</button> {% endcomment %}
+                  <button type="button" onclick="downloadPDF()" class="badge badge-sm bg-gradient-primary border-0 me-3"> 
+                    <a href="" style="color: white; text-decoration: none;">PDF</a>
+                 
+                 
                 </div>
               </div>
             </div>
             
             </br>
-              <div class="table-responsive">
+              <div id="table-container" class="table-responsive">
                 <table class="table align-items-center mb-0" id="transaction-table">
                   <thead>
                     <tr>
@@ -560,7 +568,14 @@
             <div class="col-lg-6 mb-lg-0 mb-4">
               <div class="copyright text-center text-sm text-muted text-lg-start">
 
-       
+       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+function downloadPDF() {
+    const element = document.getElementById('table-container');
+    html2pdf().from(element).save('table.pdf');
+}
+</script>
 
 
                 <script>

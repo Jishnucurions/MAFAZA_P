@@ -1,0 +1,50 @@
+
+
+{% block content %}
+<div class="container mt-4">
+    <h2>My Documents</h2>
+    <a href="{% url 'upload_document' %}" class="btn btn-success mb-3">Upload New Document</a>
+    
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Document Type</th>
+                    <th>Status</th>
+                    <th>Uploaded</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>{{ doc.get_document_type_display }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if doc.status == 'APPROVED' %}bg-success
+                            {% elif doc.status == 'REJECTED' %}bg-danger
+                            {% else %}bg-warning{% endif %}">
+                            {{ doc.get_status_display }}
+                        </span>
+                        {% if doc.rejection_reason %}
+                            <br><small>Reason: {{ doc.rejection_reason }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ doc.uploaded_at|date:"SHORT_DATE_FORMAT" }}</td>
+                    <td>
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-info">View</a>
+                        {% if doc.status == 'REJECTED' %}
+                            <a href="{% url 'upload_document' %}?replace={{ doc.id }}" class="btn btn-sm btn-warning">Re-upload</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No documents uploaded yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

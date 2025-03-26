@@ -210,4 +210,17 @@ class StaffTransactionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # No need for user-specific project filtering anymore    
+        # No need for user-specific project filtering anymore
+        
+        
+# documents/forms.py
+from django import forms
+from .models import UserDocument
+
+class DocumentUploadForm(forms.ModelForm):
+    class Meta:
+        model = UserDocument
+        fields = ['document_type', 'file', 'expiration_date']
+        widgets = {
+            'expiration_date': forms.DateInput(attrs={'type': 'date'}),
+        }            

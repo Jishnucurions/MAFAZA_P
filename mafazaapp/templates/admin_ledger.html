@@ -428,9 +428,15 @@
                                         <td class="align-middle text-center">
                                             <button type="button" class="badge badge-sm bg-gradient-success border-0">Receipt</button>
                                         </td>
-                                        <td class="align-middle text-center">
+                                        {% comment %} <td class="align-middle text-center">
                                             <button type="button" class="badge badge-sm bg-gradient-primary border-0">User Docs</button>
-                                        </td>
+                                        </td> {% endcomment %}
+                                        <td class="align-middle text-center">
+                                          <a href="{% url 'admin_user_documents' entry.transaction.user.id %}" 
+                                             class="badge badge-sm bg-gradient-primary border-0">
+                                             User Docs
+                                          </a>
+                                      </td>
                                     </tr>
                                     {% empty %}
                                     <tr>

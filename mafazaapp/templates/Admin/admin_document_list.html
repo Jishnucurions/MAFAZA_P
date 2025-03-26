@@ -1,0 +1,53 @@
+
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Documents for {{ user.username }}</h6>
+                        <a href="{% url 'admin_ledger' %}" class="btn btn-sm btn-secondary">Back to Ledger</a>
+                    </div>
+                </div>
+                <div class="card-body px-0 pb-2">
+                    <div class="table-responsive">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Document Type</th>
+                                    <th class="text-center">Uploaded Date</th>
+                                    <th class="text-center">View</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td class="align-middle text-center">
+                                        <span class="text-xs font-weight-bold">{{ doc.get_document_type_display }}</span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="text-xs font-weight-bold">{{ doc.uploaded_at|date:"SHORT_DATE_FORMAT" }}</span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <a href="{{ doc.file.url }}" target="_blank" 
+                                           class="btn btn-sm btn-info">
+                                            View Document
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center">No documents found for this user.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
